@@ -10,8 +10,9 @@ const pino = require("pino");
 const express = require("express");
 const path = require("path");
 const axios = require("axios");
+const { Sticker, StickerTypes } = require('wa-sticker-formatter'); // 🖼️ Added for sticker conversion
 
-const app = report || express();
+const app = express(); // Fallback directly to express if 'report' is undefined
 const PORT = process.env.PORT || 3000;
 
 // 🖼️ THUHI MD Logo Link
@@ -19,7 +20,7 @@ const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3
 
 // 💰 SHRINKME CONFIGURATION
 const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
-const targetUrl = "https://youtube.com/@VimukthiThuhina"; // ඔයාගේ YouTube චැනල් ලින්ක් එක
+const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
 
 // 🔗 ලින්ක් එක සහ එය පාවිච්චි කරන පියවරවල් සරලව සිංහලෙන් සකසන කොටස
 async function getEarnFooter() {
@@ -176,7 +177,7 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                     }
                 }
 
-                // 4. STICKER COMMAND (.s / .sticker)
+                // 4. STICKER COMMAND (.s / .sticker) - FIXED SECTION
                 if (command === 'sticker' || command === 's') {
                     const isQuotedImage = msgType === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
                     const isImage = msgType === 'imageMessage';
@@ -191,9 +192,21 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                             };
                         }
 
+                        // Download the image buffer
                         const buffer = await downloadMediaMessage(targetMekForSticker, 'buffer', {}, { logger: pino() });
                         
-                        await sock.sendMessage(from, { sticker: buffer }, { quoted: mek });
+                        // Process and build the proper WebP Sticker with Metadata
+                        const sticker = new Sticker(buffer, {
+                            pack: 'THUHI MD Pack',       
+                            author: 'Vimukthi Thuhina',  
+                            type: StickerTypes.FULL,     
+                            quality: 70                  
+                        });
+
+                        const stickerBuffer = await sticker.toBuffer();
+
+                        // Send the processed sticker webp buffer
+                        await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: mek });
                         await sock.sendMessage(from, { text: `🎉 *ඔබේ ස්ටිකරය සාර්ථකව සකසා ඇත!*${earnFooterText}` }, { quoted: mek });
                     } else {
                         await sock.sendMessage(from, { text: `❌ කරුණාකර ඡායාරූපයකට (Photo) පමණක් \`.s\` හෝ \`.sticker\` ලෙස Reply කරන්න.${earnFooterText}` }, { quoted: mek });
