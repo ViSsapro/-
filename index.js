@@ -8,32 +8,123 @@ const {
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const express = require("express");
-const path = require("path");
 const axios = require("axios");
-const { Sticker, StickerTypes } = require('wa-sticker-formatter'); 
+const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 
-const app = express(); 
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🖼️ THUHI MD Logo Link
 const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
-
-// 💰 SHRINKME CONFIGURATION
 const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
 const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
 
-// 🔗 ලින්ක් එක සහ එය පාවිච්චි කරන පියවරවල් සරලව සිංහලෙන් සකසන කොටස
+let sock = null;
+const messageStore = {};
+const viewOnceStore = {}; 
+
+// --- 🛠️ HELPER FUNCTIONS (PLUGINS) ---
+
 async function getEarnFooter() {
     let shortUrl = targetUrl; 
     try {
         const shortRes = await axios.get(`https://shrinkme.io/api?api=${shrinkmeApi}&url=${encodeURIComponent(targetUrl)}`);
-        if (shortRes.data && shortRes.data.status === "success") {
-            shortUrl = shortRes.data.shortenedUrl; 
+        if (shortRes.data?.status === "success") shortUrl = shortRes.data.shortenedUrl; 
+    } catch (e) { console.log("Shrinkme Error"); }
+    return `\n\n💵 *මුදල් උපයන්න:* ${shortUrl}`;
+}
+
+async function createSticker(buffer) {
+    const sticker = new Sticker(buffer, {
+        pack: 'THUHI MD Pack',       
+        author: 'Vimukthi Thuhina',  
+        type: StickerTypes.FULL,     
+        quality: 70                  
+    });
+    return await sticker.toBuffer();
+}
+
+async function downloadVideo(url) {
+    try {
+        const res = await axios.get(`https://api.dreaded.site/api/download?url=${encodeURIComponent(url)}`);
+        return res.data?.result?.download_url || res.data?.result?.url || null;
+    } catch (e) { return null; }
+}
+
+// --- 🚀 MAIN BOT START ---
+
+async function startThuhiMD() {
+    const { state, saveCreds } = await useMultiFileAuthState('./session');
+    const { version } = await fetchLatestBaileysVersion();
+
+    sock = makeWASocket({ version, auth: state, logger: pino({ level: 'silent' }) });
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('connection.update', async (update) => {
+        if (update.connection === 'open') console.log('THUHI MD READY!');
+        if (update.connection === 'close') startThuhiMD();
+    });
+
+    sock.ev.on('messages.upsert', async chatUpdate => {
+        if (chatUpdate.type !== 'notify') return;
+        const mek = chatUpdate.messages[0];
+        if (!mek.message) return;
+        
+        const from = mek.key.remoteJid;
+        const msgId = mek.key.id;
+        messageStore[msgId] = mek;
+
+        // One-View Store
+        if (mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage) viewOnceStore[msgId] = mek;
+
+        // Command Parsing
+        const body = mek.message.conversation || mek.message.extendedTextMessage?.text || "";
+        if (!body.startsWith('.')) return;
+        
+        const args = body.slice(1).trim().split(/ +/);
+        const command = args.shift().toLowerCase();
+        const earnFooter = await getEarnFooter();
+
+        // 1. STICKER
+        if (command === 's' || command === 'sticker') {
+            const quote = mek.message.extendedTextMessage?.contextInfo?.quotedMessage;
+            const targetMek = quote ? { message: quote } : mek;
+            const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino({ level: 'silent' }) });
+            const stkr = await createSticker(buffer);
+            await sock.sendMessage(from, { sticker: stkr }, { quoted: mek });
         }
-    } catch (shortErr) {
-        console.log("Shrinkme API error, bypassing...");
-    }
-    
+
+        // 2. DOWNLOADER
+        if (command === 'dl') {
+            const url = args[0];
+            const videoUrl = await downloadVideo(url);
+            if (videoUrl) await sock.sendMessage(from, { video: { url: videoUrl }, caption: "Done" + earnFooter });
+        }
+
+        // 3. OVP
+        if (command === 'ovp') {
+            const qId = mek.message.extendedTextMessage?.contextInfo?.stanzaId;
+            if (viewOnceStore[qId]) {
+                const buffer = await downloadMediaMessage(viewOnceStore[qId], 'buffer', {}, { logger: pino({ level: 'silent' }) });
+                await sock.sendMessage(from, { image: buffer, caption: "Recovered" + earnFooter });
+            }
+        }
+    });
+
+    // 4. ANTI-DELETE
+    sock.ev.on('messages.update', async chatUpdate => {
+        for (const { key, update } of chatUpdate) {
+            if (update.messageStubType === 68) {
+                const oldMsg = messageStore[key.id];
+                if (oldMsg) {
+                    await sock.sendMessage(key.remoteJid, { text: "මකාදැමූ පණිවිඩයක් හමු විය!" });
+                    // මෙතැනට අවශ්‍ය පරිදි downloadMediaMessage භාවිතයෙන් media යැවීම එකතු කරන්න.
+                }
+            }
+        }
+    });
+}
+
+app.listen(PORT, startThuhiMD);
     return `\n\n💵 *ඔබත් කැමතිද මුදල් උපයන්න මෙම link එකෙන් යන්න:*
 👉 ${shortUrl}
 
