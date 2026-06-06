@@ -6,39 +6,31 @@ const {
     delay 
 } = require("@whiskeysockets/baileys");
 const pino = require("pino");
-const readline = require("readline");
+const express = require("express");
+const path = require("path");
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const question = (text) => new Promise((resolve) => rl.question(text, resolve));
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// 🖼️ ඔයා ලබාදුන් THUHI MD Logo එකෙහි Link එක
+// 🖼️ THUHI MD Logo Link
 const botLogoUrl = "https://ibb.co/1fn2R654";
+
+let sock = null;
+
+// Static files (Web Panel එක පෙන්වීමට)
+app.use(express.static(path.join(__dirname)));
 
 async function startThuhiMD() {
     const { state, saveCreds } = await useMultiFileAuthState('./session');
     const { version } = await fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
+    sock = makeWASocket({
         version,
         logLevel: 'silent',
         auth: state,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: false
     });
-
-    // 📱 Phone Number එකෙන් Link කිරීමේ කොටස
-    if (!sock.authState.creds.registered) {
-        console.clear();
-        console.log("=================================================");
-        console.log("       🟩 THUHI MD WHATSAPP BOT CONNECTING 🟩     ");
-        console.log("=================================================");
-        const phoneNumber = await question('කරුණාකර ඔබගේ WhatsApp අංකය ඇතුලත් කරන්න (e.g., 9477xxxxxxx): ');
-        
-        await delay(3000);
-        let code = await sock.requestPairingCode(phoneNumber.trim());
-        console.log(`\nYour Pairing Code Is: ⚠️  ${code}  ⚠️\n`);
-        console.log("ඔබගේ දුරකථනයේ Linked Devices වෙත ගොස් මෙම Code එක ඇතුලත් කරන්න.");
-    }
 
     sock.ev.on('creds.update', saveCreds);
 
@@ -53,7 +45,6 @@ async function startThuhiMD() {
             console.log('🎉 THUHI MD සාර්ථකව සම්බන්ධ විය! (CONNECTED)');
             console.log('=================================================');
             
-            // Bot active වුණාම inbox එකට THUHI MD ලෝගෝ එකත් එක්ක එන Message එක
             const welcomeText = `✨ *THUHI MD සම්බන්ධ වෙමින් පවතී...* \n\nදැන් ඔබගේ inbox එකෙහි \`.alive\` ලෙස Type කර බෝට් ක්‍රියාකාරීදැයි පරීක්ෂා කරන්න!`;
             await sock.sendMessage(sock.user.id, { 
                 image: { url: botLogoUrl }, 
@@ -62,7 +53,7 @@ async function startThuhiMD() {
         }
     });
 
-    // 💬 Commands පද්ධතිය (Messages Monitor)
+    // 💬 Commands පද්ධතිය
     sock.ev.on('messages.upsert', async chatUpdate => {
         try {
             const mek = chatUpdate.messages[0];
@@ -77,7 +68,7 @@ async function startThuhiMD() {
             const command = isCmd ? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : undefined;
 
             if (isCmd) {
-                // 1. ALIVE COMMAND (ලෝගෝ එකත් සමග)
+                // 1. ALIVE COMMAND
                 if (command === 'alive') {
                     const aliveMsg = `👋 *I AM ALIVE NOW*
 
@@ -89,13 +80,10 @@ async function startThuhiMD() {
 *1* 🟩 MAIN MENU
 *2* 🟩 CREATE BOT
 *3* 🟩 CHECK PING`;
-                    await sock.sendMessage(from, { 
-                        image: { url: botLogoUrl }, 
-                        caption: aliveMsg 
-                    }, { quoted: mek });
+                    await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: aliveMsg }, { quoted: mek });
                 }
 
-                // 2. MENU COMMAND (ලෝගෝ එකත් සමග)
+                // 2. MENU COMMAND
                 if (command === 'menu' || body === '1') {
                     const menuMsg = `🏡 *MAIN MENU*
 
@@ -110,10 +98,7 @@ async function startThuhiMD() {
 5️⃣ TOOLS MENU
 6️⃣ EDUCATION MENU
 7️⃣ CHANNEL MENU`;
-                    await sock.sendMessage(from, { 
-                        image: { url: botLogoUrl }, 
-                        caption: menuMsg 
-                    }, { quoted: mek });
+                    await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: menuMsg }, { quoted: mek });
                 }
 
                 // 3. SOCIAL MENU
@@ -124,47 +109,8 @@ async function startThuhiMD() {
 └  *Download Youtube Audio*
 ─────────────────
 ┌  「 *.video* 🎥 」
-└  *Download Youtube Video*
-─────────────────
-┌  「 *.fb* 📘 」
-└  *Download Facebook Media*
-─────────────────
-┌  「 *.tiktok* 🎵 」
-└  *Download Tiktok Media*
-─────────────────
-┌  「 *.insta* 📸 」
-└  *Download Instagram Media*
-─────────────────
-┌  「 *.twitter* ❌ 」
-└  *Download X (Twitter) Media*
-─────────────────
-┌  「 *.movie* 🎬 」
-└  *Search & Download Movie All*
-─────────────────
-┌  「 *.sublk* 🇱🇰 」
-└  *Search & Download Movie sublk*`;
+└  *Download Youtube Video*`;
                     await sock.sendMessage(from, { text: socialMsg }, { quoted: mek });
-                }
-                
-                // 4. TOOLS MENU
-                if (command === 'tools' || body === '5') {
-                    const toolsMsg = `🛠️ *TOOLS MENU*
-─────────────────
-┌  「 *.ping* 📊 」
-└  *Check bot response speed*
-─────────────────
-┌  「 *.system* 💻 」
-└  *Check server info*
-─────────────────
-┌  %5B%20*.alive*%20👋%20%5D
-└  *Check if bot is active*
-─────────────────
-┌  「 *.menu* 🌍 」
-└  *Get Bot All Commands*
-─────────────────
-┌  「 *.bot* 🤖 」
-└  *Bot pairing code*`;
-                    await sock.sendMessage(from, { text: toolsMsg }, { quoted: mek });
                 }
             }
         } catch (err) {
@@ -173,4 +119,29 @@ async function startThuhiMD() {
     });
 }
 
-startThuhiMD();
+// 🌐 Web API Endpoint - මේකෙන් තමයි වෙබ් එකෙන් දෙන Number එකට Code එක ජෙනරේට් කරලා එවන්නේ
+app.get('/api/getcode', async (req, res) => {
+    let num = req.query.number;
+    if (!num) return res.status(400).json({ error: "Number is required" });
+
+    num = num.replace(/[^0-8]/g, ""); // සුද්ද කිරීම
+
+    try {
+        if (!sock || sock.authState.creds.registered) {
+            return res.json({ error: "බෝට් දැනටමත් වෙනත් අංකයකට සම්බන්ධ වී ඇත." });
+        }
+        
+        await delay(1500);
+        let code = await sock.requestPairingCode(num.trim());
+        return res.json({ code: code });
+    } catch (error) {
+        console.log("Pairing Error:", error);
+        return res.status(500).json({ error: "කේතය ලබා ගැනීමට නොහැකි විය." });
+    }
+});
+
+// Web Server එක Start කිරීම
+app.listen(PORT, () => {
+    console.log(`Web server running on port ${PORT}`);
+    startThuhiMD();
+});
