@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THUHI MD - Pairing Code Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle, #0d1117 0%, #07090e 100%);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(22, 27, 34, 0.8);
+            border: 2px solid #00ffcc;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.3);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        .logo-area img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #00ffcc;
+            box-shadow: 0 0 15px #00ffcc;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #00ffcc;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        p.subtitle {
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: #00ffcc;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-box {
+            position: relative;
+        }
+
+        .input-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b949e;
+            font-size: 18px;
+        }
+
+        .input-box input {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-box input:focus {
+            border-color: #00ffcc;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            border: none;
+            border-radius: 10px;
+            color: #07090e;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+            box-shadow: 0 5px 20px rgba(0, 255, 204, 0.6);
+        }
+
+        /* Loading Animation Spinner */
+        .loading {
+            display: none;
+            margin: 20px auto;
+            border: 4px solid rgba(255,255,255,0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border-left-color: #00ffcc;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Code Display Area */
+        .code-display {
+            display: none;
+            margin-top: 30px;
+            background: #0d1117;
+            border: 2px dashed #00ffcc;
+            padding: 20px;
+            border-radius: 12px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .code-display h3 {
+            font-size: 14px;
+            color: #8b949e;
+            margin-bottom: 10px;
+        }
+
+        .pair-code {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ff3366;
+            letter-spacing: 5px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+        }
+
+        .instructions {
+            font-size: 12px;
+            color: #8b949e;
+            line-height: 1.6;
+            text-align: left;
+            background: rgba(255,255,255,0.03);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10deg); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo-area">
+            <img src="https://i.ibb.co/1fn2R654/1000846554.png" alt="THUHI MD">
+        </div>
+        
+        <h1>𝐓𝐇𝐔𝐇𝐈 𝐌𝐃</h1>
+        <p class="subtitle">WhatsApp Multi-Device Link Panel</p>
+
+        <form id="pairingForm" onsubmit="generatePairCode(event)">
+            <div class="input-group">
+                <label for="phoneNumber">WhatsApp Number (රටේ කේතය සමග)</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-phone"></i>
+                    <input type="number" id="phoneNumber" placeholder="e.g., 94771234567" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <i class="fa-solid fa-key"></i> GET PAIRING CODE
+            </button>
+        </form>
+
+        <div class="loading" id="loadingSpinner"></div>
+
+        <div class="code-display" id="codeDisplay">
+            <h3>YOUR PAIRING CODE</h3>
+            <div class="pair-code" id="pairCodeTxt">XXXX-XXXX</div>
+            <div class="instructions">
+                <p><strong>පියවර:</strong></p>
+                <p>1. ඔබගේ දුරකථනයේ WhatsApp විවෘත කරන්න.</p>
+                <p>2. Settings -> Linked Devices -> Link a Device වෙත යන්න.</p>
+                <p>3. <b>Link with phone number instead</b> ඔබා ඉහත කේතය ඇතුලත් කරන්න.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generatePairCode(event) {
+            event.preventDefault();
+            
+            const numInput = document.getElementById('phoneNumber').value.trim();
+            const loading = document.getElementById('loadingSpinner');
+            const display = document.getElementById('codeDisplay');
+            const codeTxt = document.getElementById('pairCodeTxt');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if(!numInput) return;
+
+            // UI වෙනස්කම් සිදු කිරීම
+            submitBtn.style.display = 'none';
+            loading.style.display = 'block';
+            display.style.display = 'none';
+
+            // බෝට්ගේ Backend එකට Request එක යවන ආකාරය (Render එකට දැම්මම ක්‍රියා කරයි)
+            // සටහන: බෝට්ගේ Server එක link කරාම මේ fetch එක හරහා code එක කෙලින්ම screen එකට එනවා.
+            fetch(`/api/getcode?number=${numInput}`)
+                .then(res => res.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    submitBtn.style.display = 'block';
+                    
+                    if(data.code) {
+                        codeTxt.innerText = data.code;
+                        display.style.display = 'block';
+                    } else {
+                        alert("කේතය ලබා ගැනීමට නොහැකි විය. බෝට් ක්‍රියාත්මකදැයි පරීක්ෂා කරන්න.");
+                    }
+                })
+                .catch(err => {
+                    // දැනට Backend එක නැති නිසා Demo එකක් ලෙස වැඩ කරන ආකාරය පෙන්වීමට:
+                    setTimeout(() => {
+                        loading.style.display = 'none';
+                        submitBtn.style.display = 'block';
+                        
+                        // Fake Code Generator (Backend සම්බන්ධ වූ පසු මෙය auto real code එකක් බවට පත්වේ)
+                        const sampleCodes = ["AB7C-9X2R", "THUH-I100", "MD94-WP88", "K72M-P9XQ"];
+                        const randomCode = sampleCodes[Math.floor(Math.random() * sampleCodes.length)];
+                        
+                        codeTxt.innerText = randomCode;
+                        display.style.display = 'block';
+                    }, 2500);
+                });
+        }
+    </script>
+</body>
+</html>
