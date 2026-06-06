@@ -11,7 +11,7 @@ const express = require("express");
 const path = require("path");
 const axios = require("axios");
 
-const app = express();
+const app = report || express();
 const PORT = process.env.PORT || 3000;
 
 // 🖼️ THUHI MD Logo Link
@@ -21,7 +21,7 @@ const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3
 const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
 const targetUrl = "https://youtube.com/@VimukthiThuhina"; // ඔයාගේ YouTube චැනල් ලින්ක් එක
 
-// 🔗 ඔයා ඉල්ලපු සිංහල මැසේජ් එක ලස්සනට සකසන කොටස
+// 🔗 ලින්ක් එක සහ එය පාවිච්චි කරන පියවරවල් සරලව සිංහලෙන් සකසන කොටස
 async function getEarnFooter() {
     let shortUrl = targetUrl; 
     try {
@@ -33,7 +33,13 @@ async function getEarnFooter() {
         console.log("Shrinkme API error, bypassing...");
     }
     
-    return `\n\n💵 *ඔබත් කැමතිද මුදල් උපයන්න මෙම link එකෙන් යන්න:* \n👉 ${shortUrl}\n_(ලින්ක් එක ක්ලික් කර තත්පර 5ක් රැඳී සිටින්න)_`;
+    return `\n\n💵 *ඔබත් කැමතිද මුදල් උපයන්න මෙම link එකෙන් යන්න:*
+👉 ${shortUrl}
+
+*📌 ලින්ක් එකෙන් ඉදිරියට යන සරල පියවර 3:*
+1️⃣ ලින්ක් එකට ගොස් ඉහළින් එන *'CLOSE'* හෝ *'X'* ඔබන්න.
+2️⃣ පහළට ගොස් නිල් පාට *'Click here to continue'* ඔබන්න.
+3️⃣ තත්පර 5ක් රැඳී සිට *'Get Link'* ඔබන්න.`;
 }
 
 let sock = null;
@@ -69,7 +75,6 @@ async function startThuhiMD() {
             console.log('🎉 THUHI MD IS RUNNING AND READY NOW!');
             console.log('=================================================');
 
-            // ⚡ බෝට් ලින්ක් වුණු ගමන්ම ලැබෙන මැසේජ් එක
             try {
                 const myNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
                 const welcomeMsg = `✨ *THUHI MD සම්බන්ධ වෙමින් පවතී...*
@@ -120,7 +125,6 @@ _Powered by Vimukthi Thuhina_`;
             const args = body.trim().split(/ +/).slice(1);
 
             if (isCmd) {
-                // 💰 සල්ලි ලින්ක් එක සූදානම් කරගැනීම
                 const earnFooterText = await getEarnFooter();
 
                 // 1. ALIVE COMMAND
@@ -223,7 +227,7 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
         }
     });
 
-    // 🚨 ANTI-DELETE DETECTOR SYSTEM (THUHI MD FORMAT)
+    // 🚨 ANTI-DELETE DETECTOR SYSTEM
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
