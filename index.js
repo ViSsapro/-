@@ -14,12 +14,14 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 🖼️ THUHI MD Logo Link (ඔයා හොයාගත්තු නියම PNG ලින්ක් එක)
 const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
+
 let sock = null;
 
 // Anti-Delete සහ One-View තාවකාලිකව තබා ගන්නා තැන්
 const messageStore = {};
-const viewOnceStore = {}; // One View Photo රහසින් මතක තබා ගැනීමට
+const viewOnceStore = {}; 
 
 app.use(express.static(path.join(__dirname)));
 
@@ -43,7 +45,9 @@ async function startThuhiMD() {
             const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
             if (shouldReconnect) startThuhiMD();
         } else if (connection === 'open') {
-            console.log('🎉 THUHI MD CONNECTED SUCCESSFULLY!');
+            console.log('=================================================');
+            console.log('🎉 THUHI MD සාර්ථකව සම්බන්ධ විය! (CONNECTED)');
+            console.log('=================================================');
         }
     });
 
@@ -56,15 +60,15 @@ async function startThuhiMD() {
             const from = mek.key.remoteJid;
             const msgId = mek.key.id;
             
-            // 🛑 ANTI-DELETE සඳහා සාමාන්‍ය මැසේජ් සේව් කරගැනීම
+            // Anti-Delete සඳහා මැසේජ් සේව් කරගැනීම
             messageStore[msgId] = mek;
 
-            // 🔓 ONE-VIEW PHOTO එකක් ආවොත් ඒක කාටත් හොරෙන් බෝට්ගේ මතකයට ගැනීම
+            // One-View Photo එකක් ආවොත් මතකයට ගැනීම
             const isViewOnce = mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage;
             if (isViewOnce) {
                 const viewOnceMsg = mek.message.viewOnceMessageV2?.message?.imageMessage || mek.message.viewOnceMessage?.message?.imageMessage;
                 if (viewOnceMsg) {
-                    viewOnceStore[msgId] = viewOnceMsg; // මැසේජ් ID එකෙන් සේව් කරගන්නවා
+                    viewOnceStore[msgId] = viewOnceMsg;
                 }
             }
 
@@ -85,35 +89,63 @@ async function startThuhiMD() {
             const args = body.trim().split(/ +/).slice(1);
 
             if (isCmd) {
-                // ALIVE COMMAND
+                // 1. ALIVE COMMAND (.alive)
                 if (command === 'alive') {
-                    await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: `👋 *THUHI MD IS ALIVE*` }, { quoted: mek });
+                    const aliveMsg = `👋 *THUHI MD IS ALIVE NOW*
+
+*OWNER* - THUHI MD
+*VERSION* - 1.0.0
+*PREFIX* - [ . ]
+
+💬 මාත් එක්ක තියෙන Commands ඔක්කොම බලන්න \`.menu\` ලෙස Type කරන්න!`;
+                    await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: aliveMsg }, { quoted: mek });
                 }
 
-                // 🔓 1. ONE-VIEW RECOVERY COMMAND (.ovp)
+                // 2. MENU COMMAND (.menu)
+                if (command === 'menu' || command === 'help') {
+                    const menuText = `✨ *THUHI MD WHATSAPP BOT MENU* ✨
+
+👋 හෙලෝ යාළුවා, මම THUHI MD බහුකාර්ය WhatsApp බෝට්.
+
+*📥 DOWNLOAD COMMANDS:*
+• \`.dl [link]\` - TikTok, FB, Insta, YouTube වීඩියෝ ඩවුන්ලෝඩ් කරන්න.
+
+*🖼️ STICKER COMMANDS:*
+• \`.sticker\` / \`.s\` - ඡායාරූපයකට Reply කර ස්ටිකර් එකක් සාදාගන්න.
+
+*🔓 WHATSAPP TOOLS:*
+• \`.ovp\` - One-View ඡායාරූපයකට Reply කර එය සාමාන්‍ය ඡායාරූපයක් ලෙස ලබාගන්න.
+
+*🤖 SYSTEM COMMANDS:*
+• \`.alive\` - බෝට් ක්‍රියාකාරීදැයි පරීක්ෂා කිරීමට.
+• \`.menu\` - මේ මෙනුව ලබා ගැනීමට.
+
+---
+*🚨 AUTOMATIC FEATURES:*
+• *Anti-Delete:* කවුරුහරි මකන මැසේජ් ඔටෝමැටිකව චැට් එකට ලබාදේ.
+
+_Powered by Vimukthi Thuhina_`;
+                    await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: menuText }, { quoted: mek });
+                }
+
+                // 3. ONE-VIEW RECOVERY COMMAND (.ovp)
                 if (command === 'ovp') {
-                    // ඔයා Reply කරපු මැසේජ් එකේ ID එක ගන්නවා
                     const quotedMsgId = mek.message.extendedTextMessage?.contextInfo?.stanzaId;
-                    
                     if (quotedMsgId && viewOnceStore[quotedMsgId]) {
                         const savedViewOnce = viewOnceStore[quotedMsgId];
-                        
                         await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය ලබා ගනිමින් පවතී...*" }, { quoted: mek });
                         
-                        // ඩවුන්ලෝඩ් කර චැට් එකට යැවීම
                         const stream = await downloadContentFromMessage(savedViewOnce, 'image');
                         let buffer = Buffer.from([]);
-                        for await (const chunk of stream) {
-                            buffer = Buffer.concat([buffer, chunk]);
-                        }
+                        for await (const chunk of stream) { buffer = Buffer.concat([buffer, chunk]); }
                         
                         await sock.sendMessage(from, { image: buffer, caption: '🔓 *THUHI MD: One-View Photo Recovered!*' }, { quoted: mek });
                     } else {
-                        await sock.sendMessage(from, { text: "❌ කරුණාකර වලංගු One-View (View Once) ඡායාරූපයකට පමණක් `.ovp` ලෙස Reply කරන්න. (නැතහොත් බෝට් පණ ගැන්වීමට පෙර ලැබුණු එකක් විය හැක)" }, { quoted: mek });
+                        await sock.sendMessage(from, { text: "❌ කරුණාකර වලංගු One-View ඡායාරූපයකට පමණක් \`.ovp\` ලෙස Reply කරන්න." }, { quoted: mek });
                     }
                 }
 
-                // 🖼️ 2. STICKER COMMAND
+                // 4. STICKER COMMAND (.sticker)
                 if (command === 'sticker' || command === 's') {
                     const isQuotedImage = type === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
                     const isImage = type === 'imageMessage';
@@ -129,10 +161,10 @@ async function startThuhiMD() {
                     }
                 }
 
-                // 📥 3. SOCIAL MEDIA VIDEO DOWNLOADER
+                // 5. SOCIAL MEDIA VIDEO DOWNLOADER (.dl)
                 if (command === 'dl' || command === 'download') {
                     const url = args[0];
-                    if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියോ ලින්ක් එකක් ඇතුළත් කරන්න." }, { quoted: mek });
+                    if (!url) return await sock.sendMessage(from, { text: "❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න." }, { quoted: mek });
 
                     await sock.sendMessage(from, { text: "⏳ *වීඩියෝව සකසමින් පවතී...*" });
 
@@ -142,10 +174,10 @@ async function startThuhiMD() {
                             const videoUrl = res.data.result.download_url || res.data.result.url;
                             await sock.sendMessage(from, { video: { url: videoUrl }, caption: "📥 *Downloaded by THUHI MD*" }, { quoted: mek });
                         } else {
-                            await sock.sendMessage(from, { text: "❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය." }, { quoted: mek });
+                            await sock.sendMessage(from, { text: "❌ වීඩියෝව ලබා ගැනීමට JavaScript දෝෂයක් පවතී." }, { quoted: mek });
                         }
                     } catch (e) {
-                        await sock.sendMessage(from, { text: "❌ සර්වර් දෝෂයකි." }, { quoted: mek });
+                        await sock.sendMessage(from, { text: "❌ සර්වර් දෝෂයකි. පසුව උත්සාහ කරන්න." });
                     }
                 }
             }
@@ -154,7 +186,7 @@ async function startThuhiMD() {
         }
     });
 
-    // 🚨 4. ANTI-DELETE DETECTOR
+    // Anti-Delete Detector System
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
@@ -164,7 +196,7 @@ async function startThuhiMD() {
                 if (oldMessage) {
                     const from = key.remoteJid;
                     const participant = key.participant || key.remoteJid;
-                    await sock.sendMessage(from, { text: `🚨 *ANTI-DELETE DETECTED!* \n\n*Sender:* @${participant.split('@')[0]} මැසේජ් එකක් මකා දැමුවා:`, mentions: [participant] });
+                    await sock.sendMessage(from, { text: `🚨 *ANTI-DELETE DETECTED!* \n\n*Sender:* @${participant.split('@')[0]} මැසේජ් එකක් مකා දැමුවා:`, mentions: [participant] });
                     await sock.copyNForward(from, oldMessage, true);
                 }
             }
