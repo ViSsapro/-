@@ -46,7 +46,7 @@ async function startThuhiMD() {
             if (shouldReconnect) startThuhiMD();
         } else if (connection === 'open') {
             console.log('=================================================');
-            console.log('🎉 THUHI MD IS NATURALLY WORKING NOW!');
+            console.log('🎉 THUHI MD IS RUNNING AND READY NOW!');
             console.log('=================================================');
         }
     });
@@ -132,7 +132,6 @@ _Powered by Vimukthi Thuhina_`;
                         await sock.sendMessage(from, { text: "⏳ *One-View ඡායාරූපය බෝට් මඟින් සකසමින් පවතී...*" }, { quoted: mek });
                         const targetMek = viewOnceStore[quotedMsgId];
                         
-                        // ආරක්ෂිතව මීඩියා ඩවුන්ලෝඩ් කිරීම
                         const buffer = await downloadMediaMessage(targetMek, 'buffer', {}, { logger: pino() });
                         await sock.sendMessage(from, { image: buffer, caption: '🔓 *THUHI MD: One-View Photo Saved Successfully!*' }, { quoted: mek });
                     } else {
@@ -140,7 +139,7 @@ _Powered by Vimukthi Thuhina_`;
                     }
                 }
 
-                // 4. STICKER COMMAND (.s / .sticker) - සම්පූර්ණයෙන්ම ස්ථාවර කරන ලදී
+                // 4. STICKER COMMAND (.s / .sticker)
                 if (command === 'sticker' || command === 's') {
                     const isQuotedImage = msgType === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.imageMessage;
                     const isImage = msgType === 'imageMessage';
@@ -150,16 +149,12 @@ _Powered by Vimukthi Thuhina_`;
                         
                         let targetMekForSticker = mek;
                         if (isQuotedImage) {
-                            // Quoted මැසේජ් එකක් නම් ඒක වෙනම object එකක් විදියට සැකසීම
                             targetMekForSticker = {
                                 message: mek.message.extendedTextMessage.contextInfo.quotedMessage
                             };
                         }
 
-                        // ආරක්ෂිතව Baileys ඩවුන්ලෝඩරය හරහා Image Buffer එක ගැනීම
                         const buffer = await downloadMediaMessage(targetMekForSticker, 'buffer', {}, { logger: pino() });
-                        
-                        // WhatsApp වෙත කෙලින්ම sticker buffer එක යැවීම (Baileys auto-handles raw image to sticker format conversion)
                         await sock.sendMessage(from, { sticker: buffer }, { quoted: mek });
                     } else {
                         await sock.sendMessage(from, { text: "❌ කරුණාකර ඡායාරූපයකට (Photo) පමණක් \`.s\` හෝ \`.sticker\` ලෙස Reply කරන්න." }, { quoted: mek });
@@ -191,7 +186,7 @@ _Powered by Vimukthi Thuhina_`;
         }
     });
 
-    // 🚨 ANTI-DELETE DETECTOR SYSTEM (නැවත සකස් කරන ලද ක්‍රමවේදය)
+    // 🚨 5. ANTI-DELETE DETECTOR SYSTEM (ලස්සනට FORMAT කර සකස් කරන ලදී)
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
@@ -201,9 +196,56 @@ _Powered by Vimukthi Thuhina_`;
                 if (oldMessage) {
                     const from = key.remoteJid;
                     const participant = key.participant || key.remoteJid;
-                    
-                    await sock.sendMessage(from, { text: `🚨 *ANTI-DELETE DETECTED!* \n\n*එවපු කෙනා:* @${participant.split('@')[0]} මැසේජ් එකක් මැකුවා. මකාදැමූ මැසේජ් එක පහතින් දැක්වේ:`, mentions: [participant] });
-                    await sock.copyNForward(from, oldMessage, true);
+                    const senderNum = participant.split('@')[0];
+
+                    // මැකුණු මැසේජ් එක ඇතුළේ තිබුණු වර්ගය සහ text එක හඳුනා ගැනීම
+                    let innerMsg = oldMessage.message;
+                    let innerType = Object.keys(innerMsg)[0];
+                    if (innerType === 'ephemeralMessage') {
+                        innerMsg = innerMsg.ephemeralMessage.message;
+                        innerType = Object.keys(innerMsg)[0];
+                    }
+
+                    let deletedText = '';
+                    if (innerType === 'conversation') deletedText = innerMsg.conversation;
+                    else if (innerType === 'extendedTextMessage') deletedText = innerMsg.extendedTextMessage.text;
+                    else if (innerType === 'imageMessage') deletedText = innerMsg.imageMessage.caption || '🖼️ (ඡායාරූපයක caption එකක් නොමැත)';
+                    else if (innerType === 'videoMessage') deletedText = innerMsg.videoMessage.caption || '📹 (වීඩියෝවක caption එකක් නොමැත)';
+                    else if (innerType === 'audioMessage') deletedText = '🎵 (හඬ පටයකි / Audio File)';
+                    else if (innerType === 'documentMessage') deletedText = `📄 Document: ${innerMsg.documentMessage.fileName || 'File'}`;
+                    else deletedText = '📦 (මීඩියා හෝ වෙනත් මැසේජ් එකකි)';
+
+                    // ඔයා ඉල්ලපු විදියටම ලස්සනට සකස් කරපු Format එක
+                    const antiDeleteAlert = `*°❤️🛑 ANTI DELETE DETECTED 🛑❤️°*
+
+• *Deleted By:* @${senderNum}
+• *Message From:* @${senderNum}
+
+💬 *Message:* ${deletedText}
+
+| © *THUHI MD MINI BOT*`;
+
+                    // මුලින්ම විස්තරය Text එකක් විදියට Mentions එක්ක යවනවා
+                    await sock.sendMessage(from, { text: antiDeleteAlert, mentions: [participant] });
+
+                    // මැකුණු එක Media (Photo/Video/Audio) එකක් නම්, ඒ මීඩියා එකත් ඩවුන්ලෝඩ් කරලා ඔටෝම පල්ලෙහායින් යවනවා!
+                    const hasMedia = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage'].includes(innerType);
+                    if (hasMedia) {
+                        try {
+                            const buffer = await downloadMediaMessage(oldMessage, 'buffer', {}, { logger: pino() });
+                            if (innerType === 'imageMessage') {
+                                await sock.sendMessage(from, { image: buffer, caption: '🔺 *මකාදැමූ ඡායාරූපය (Recovered)*' });
+                            } else if (innerType === 'videoMessage') {
+                                await sock.sendMessage(from, { video: buffer, caption: '🔺 *මකාදැමූ වීඩියෝව (Recovered)*' });
+                            } else if (innerType === 'audioMessage') {
+                                await sock.sendMessage(from, { audio: buffer, mimetype: innerMsg.audioMessage.mimetype, ptt: innerMsg.audioMessage.ptt });
+                            } else if (innerType === 'documentMessage') {
+                                await sock.sendMessage(from, { document: buffer, mimetype: innerMsg.documentMessage.mimetype, fileName: innerMsg.documentMessage.fileName });
+                            }
+                        } catch (mediaErr) {
+                            console.log("Media download error on anti-delete:", mediaErr);
+                        }
+                    }
                 }
             }
         }
