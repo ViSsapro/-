@@ -39,6 +39,7 @@ async function startThuhiMD() {
 
     sock.ev.on('creds.update', saveCreds);
 
+    // 🔗 CONNECTION UPDATE SYSTEM (ලින්ක් වුණු ගමන් මැසේජ් එක එන පද්ධතිය)
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
@@ -48,6 +49,20 @@ async function startThuhiMD() {
             console.log('=================================================');
             console.log('🎉 THUHI MD IS RUNNING AND READY NOW!');
             console.log('=================================================');
+
+            // ⚡ බෝට් ලින්ක් වුණු ගමන්ම තමන්ගේම Inbox එකට මැසේජ් එකක් යැවීම
+            try {
+                const myNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+                const welcomeMsg = `✨ *THUHI MD සම්බන්ධ වෙමින් පවතී...*
+
+දැන් ඔබගේ inbox එකෙහි \`.alive\` ලෙස Type කර බෝට් ක්‍රියාකාරීදැයි පරීක්ෂා කරන්න!
+
+_Powered by Vimukthi Thuhina_`;
+                
+                await sock.sendMessage(myNumber, { image: { url: botLogoUrl }, caption: welcomeMsg });
+            } catch (e) {
+                console.log("Error sending welcome message: ", e);
+            }
         }
     });
 
@@ -186,7 +201,7 @@ _Powered by Vimukthi Thuhina_`;
         }
     });
 
-    // 🚨 5. ANTI-DELETE DETECTOR SYSTEM (ලස්සනට FORMAT කර සකස් කරන ලදී)
+    // 🚨 ANTI-DELETE DETECTOR SYSTEM (ලස්සනට FORMAT කර සකස් කරන ලදී)
     sock.ev.on('messages.update', async chatUpdate => {
         for (const { key, update } of chatUpdate) {
             if (update.messageStubType === 68 || update.revoke) {
@@ -198,7 +213,6 @@ _Powered by Vimukthi Thuhina_`;
                     const participant = key.participant || key.remoteJid;
                     const senderNum = participant.split('@')[0];
 
-                    // මැකුණු මැසේජ් එක ඇතුළේ තිබුණු වර්ගය සහ text එක හඳුනා ගැනීම
                     let innerMsg = oldMessage.message;
                     let innerType = Object.keys(innerMsg)[0];
                     if (innerType === 'ephemeralMessage') {
@@ -215,7 +229,6 @@ _Powered by Vimukthi Thuhina_`;
                     else if (innerType === 'documentMessage') deletedText = `📄 Document: ${innerMsg.documentMessage.fileName || 'File'}`;
                     else deletedText = '📦 (මීඩියා හෝ වෙනත් මැසේජ් එකකි)';
 
-                    // ඔයා ඉල්ලපු විදියටම ලස්සනට සකස් කරපු Format එක
                     const antiDeleteAlert = `*°❤️🛑 ANTI DELETE DETECTED 🛑❤️°*
 
 • *Deleted By:* @${senderNum}
@@ -225,10 +238,8 @@ _Powered by Vimukthi Thuhina_`;
 
 | © *THUHI MD MINI BOT*`;
 
-                    // මුලින්ම විස්තරය Text එකක් විදියට Mentions එක්ක යවනවා
                     await sock.sendMessage(from, { text: antiDeleteAlert, mentions: [participant] });
 
-                    // මැකුණු එක Media (Photo/Video/Audio) එකක් නම්, ඒ මීඩියා එකත් ඩවුන්ලෝඩ් කරලා ඔටෝම පල්ලෙහායින් යවනවා!
                     const hasMedia = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage'].includes(innerType);
                     if (hasMedia) {
                         try {
