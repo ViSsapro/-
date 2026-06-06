@@ -119,19 +119,22 @@ async function startThuhiMD() {
     });
 }
 
-// 🌐 Web API Endpoint - මේකෙන් තමයි වෙබ් එකෙන් දෙන Number එකට Code එක ජෙනරේට් කරලා එවන්නේ
-app.get('/api/getcode', async (req, res) => {
+// 🌐 Web API Endpoint - HTML එකේ තියෙන `/code` ලින්ක් එකට හරියන්න මෙන්න හැදුවා
+app.get('/code', async (req, res) => {
     let num = req.query.number;
     if (!num) return res.status(400).json({ error: "Number is required" });
 
-    num = num.replace(/[^0-8]/g, ""); // සුද්ද කිරීම
+    // ඉලක්කම් විතරක් ඉතිරි කර 9 ඇතුළු අනෙක් සියලු දේ සුද්ද කිරීම (0-9 දක්වා හැදුවා)
+    num = num.replace(/[^0-9]/g, ""); 
 
     try {
-        if (!sock || sock.authState.creds.registered) {
-            return res.json({ error: "බෝට් දැනටමත් වෙනත් අංකයකට සම්බන්ධ වී ඇත." });
+        // බෝට් සකස් වී නැත්නම් initialize කිරීම
+        if (!sock) {
+            return res.status(500).json({ error: "සර්වර් එක තවමත් සූදානම් නැත. කරුණාකර තත්පර කිහිපයකින් නැවත උත්සාහ කරන්න." });
         }
         
-        await delay(1500);
+        await delay(2000);
+        // Baileys හරහා WhatsApp සර්වර් එකෙන් ලේසියෙන්ම pairing code එක ඉල්ලනවා
         let code = await sock.requestPairingCode(num.trim());
         return res.json({ code: code });
     } catch (error) {
