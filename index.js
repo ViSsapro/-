@@ -233,60 +233,49 @@ _Powered by Vimukthi Thuhina_${earnFooterText}`;
                         await sock.sendMessage(from, { text: `âŒ à¶šà¶»à·”à¶«à·à¶šà¶» à¶¡à·à¶ºà·à¶»à·–à¶´à¶ºà¶šà¶§ (Photo) à¶´à¶¸à¶«à¶šà·Š \`.s\` à·„à· \`.sticker\` à¶½à·™à·ƒ Reply à¶šà¶»à¶±à·Šà¶±.${earnFooterText}` }, { quoted: mek });
                     }
                 }
+// 5. SOCIAL MEDIA DOWNLOADER WITH PODDA API (UPDATED)
+if (command === 'dl' || command === 'download') {
+    const url = args[0];
+    if (!url) return await sock.sendMessage(from, { text: `❌ කරුණාකර වීඩියෝ ලින්ක් එකක් ඇතුළත් කරන්න.${earnFooterText}` }, { quoted: mek });
 
-                // 5. SOCIAL MEDIA DOWNLOADER WITH BRAND NEW FAST API (100% FIXED)
-                if (command === 'dl' || command === 'download') {
-                    const url = args[0];
-                    if (!url) return await sock.sendMessage(from, { text: `âŒ à¶šà¶»à·”à¶«à·à¶šà¶» à·€à·“à¶©à·’à¶ºà· à¶½à·’à¶±à·Šà¶šà·Š à¶‘à¶šà¶šà·Š à¶‡à¶­à·”à·…à¶­à·Š à¶šà¶»à¶±à·Šà¶±.${earnFooterText}` }, { quoted: mek });
+    await sock.sendMessage(from, { text: "⏳ *වීඩියෝව සකසමින් පවතී...*" }, { quoted: mek });
 
-                    await sock.sendMessage(from, { text: "â³ *à·€à·“à¶©à·’à¶ºà·à·€ à·ƒà¶šà·ƒà¶¸à·’à¶±à·Š à¶´à·€à¶­à·“...*" }, { quoted: mek });
+    try {
+        let videoUrl = null;
+        let isMp4 = false;
 
-                    try {
-                        let videoUrl = null;
-
-                        // API 1: BK9 Site (Very Reliable for All-in-One)
-                        try {
-                            const res1 = await axios.get(`https://bk9.fun/api/download/alldl?url=${encodeURIComponent(url)}`);
-                            if (res1.data && res1.data.status && res1.data.BK9) {
-                                videoUrl = res1.data.BK9.url || res1.data.BK9.video || res1.data.BK9; 
-                            }
-                        } catch (e1) {
-                            console.log("BK9 API error, trying next...");
-                        }
-
-                        // API 2: Giftedtech (Fallback)
-                        if (!videoUrl) {
-                            try {
-                                const res2 = await axios.get(`https://api.giftedtech.my.id/api/download/allinone?url=${encodeURIComponent(url)}`);
-                                if (res2.data && res2.data.result) {
-                                    videoUrl = res2.data.result.url || res2.data.result.videoUrl || res2.data.result.mp4 || res2.data.result.hd;
-                                }
-                            } catch (e2) {
-                                console.log("Giftedtech API error");
-                            }
-                        }
-
-                        // API 3: Simple Axios fetch if it's already a direct link (Optional but useful fallback)
-                        if (!videoUrl && url.endsWith('.mp4')) {
-                            videoUrl = url;
-                        }
-
-                        if (videoUrl && typeof videoUrl === 'string') {
-                            const captionText = `ðŸ“¥ *Downloaded by THUHI MD*${earnFooterText}`;
-                            await sock.sendMessage(from, { video: { url: videoUrl }, caption: captionText }, { quoted: mek });
-                        } else {
-                            await sock.sendMessage(from, { text: `âŒ à·€à·“à¶©à·’à¶ºà·à·€ à·ƒà¶»à·Šà·€à¶»à·Š à¶‘à¶šà·™à¶±à·Š à¶½à¶¶à· à¶œà·à¶±à·“à¶¸à¶§ à¶±à·œà·„à·à¶šà·’ à·€à·’à¶º. à¶½à·’à¶±à·Šà¶šà·Š à¶‘à¶š à¶±à·’à·€à·à¶»à¶¯à·’à¶¯à·à¶ºà·’ à¶´à¶»à·“à¶šà·Šà·‚à· à¶šà¶»à¶±à·Šà¶±.${earnFooterText}` }, { quoted: mek });
-                        }
-                    } catch (e) {
-                        console.log("Downloader Error: ", e);
-                        await sock.sendMessage(from, { text: `âŒ à¶©à·€à·”à¶±à·Šà¶½à·à¶©à¶»à·Š à·ƒà¶»à·Šà·€à¶»à·Š à¶‘à¶šà·™à·„à·’ à¶¯à·à·‚à¶ºà¶šà·’. à¶šà¶»à·”à¶«à·à¶šà¶» à¶´à·ƒà·”à·€ à¶‹à¶­à·Šà·ƒà·à·„ à¶šà¶»à¶±à·Šà¶±.${earnFooterText}` }, { quoted: mek });
-                    }
-                }
+        // Podda API හරහා විධාන හඳුනාගැනීම
+        // MP4 සඳහා - mp4_2 තෝරාගනී
+        const res = await axios.get(`https://podda-api.zone.id/ytmp4_2?url=${encodeURIComponent(url)}`);
+        
+        if (res.data && res.data.result) {
+            videoUrl = res.data.result.download_url || res.data.result.url;
+            isMp4 = true;
+        } else {
+            // MP4 නොලැබුනේ නම් MP3 උත්සාහ කරයි
+            const res2 = await axios.get(`https://podda-api.zone.id/ytmp3_2?url=${encodeURIComponent(url)}`);
+            if (res2.data && res2.data.result) {
+                videoUrl = res2.data.result.download_url || res2.data.result.url;
+                isMp4 = false;
             }
-        } catch (err) {
-            console.log("Error inside upsert: ", err);
         }
-    });
+
+        if (videoUrl) {
+            const captionText = `📥 *Downloaded by THUHI MD*${earnFooterText}`;
+            if (isMp4) {
+                await sock.sendMessage(from, { video: { url: videoUrl }, caption: captionText }, { quoted: mek });
+            } else {
+                await sock.sendMessage(from, { audio: { url: videoUrl }, mimetype: 'audio/mpeg' }, { quoted: mek });
+            }
+        } else {
+            await sock.sendMessage(from, { text: `❌ වීඩියෝව ලබා ගැනීමට නොහැකි විය. ලින්ක් එක නිවැරදිදැයි පරීක්ෂා කරන්න.${earnFooterText}` }, { quoted: mek });
+        }
+    } catch (e) {
+        console.log("Downloader Error: ", e);
+        await sock.sendMessage(from, { text: `❌ සේවාදායක දෝෂයක්. කරුණාකර පසුව උත්සාහ කරන්න.${earnFooterText}` }, { quoted: mek });
+    }
+}
+
 
     // ðŸš¨ ANTI-DELETE DETECTOR SYSTEM
     sock.ev.on('messages.update', async chatUpdate => {
