@@ -7,10 +7,12 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ලින්ක් සහ වෙනත් අවශ්‍ය දේවල්
 const botLogoUrl = "https://i.ibb.co/Z6gnPvV2/file-000000009be47207afef1535933c3f19.png";
 const shrinkmeApi = "81bd69560df8d7ed1f3042d7bed34037908d4998"; 
 const targetUrl = "https://youtube.com/@VimukthiThuhina"; 
+
+global.messageStore = {};
+global.viewOnceStore = {}; 
 
 async function getEarnFooter() {
     let shortUrl = targetUrl; 
@@ -21,7 +23,6 @@ async function getEarnFooter() {
     return `\n\n💵 *මුදල් උපයන්න ලින්ක් එක:* ${shortUrl}\n\n📌 *පියවර 3:* 1️⃣ Close/X ඔබන්න 2️⃣ 'Click here to continue' ඔබන්න 3️⃣ තත්පර 5ක් ඉඳලා 'Get Link' ඔබන්න.`;
 }
 
-// වෙනම ෆයිල්ස් අමතන තැන
 const menuCmd = require('./menu.js');
 const mediaCmd = require('./media.js');
 
@@ -40,6 +41,9 @@ async function startThuhiMD() {
         if (!mek.message) return;
         const from = mek.key.remoteJid;
         
+        global.messageStore[mek.key.id] = mek;
+        if (mek.message.viewOnceMessageV2 || mek.message.viewOnceMessage) global.viewOnceStore[mek.key.id] = mek;
+
         const body = mek.message.conversation || mek.message.extendedTextMessage?.text || "";
         const isCmd = body.startsWith('.');
         const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : undefined;
@@ -48,10 +52,11 @@ async function startThuhiMD() {
         if (!isCmd) return;
         const footer = await getEarnFooter();
 
-        // විධාන පාලනය
         if (command === 'menu' || command === 'help') {
             await menuCmd.execute(sock, mek, from, botLogoUrl, footer);
-        } else if (['dl', 's', 'sticker', 'pic', 'vid', 'ovp', 'ovv', 'dp'].includes(command)) {
+        } else if (command === 'dl-final') {
+            await mediaCmd.downloadFinal(sock, mek, from, args[0]);
+        } else if (['dl', 's', 'sticker', 'ovp'].includes(command)) {
             await mediaCmd.execute(sock, mek, from, command, args, botLogoUrl, footer);
         }
     });
