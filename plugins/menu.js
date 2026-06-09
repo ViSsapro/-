@@ -4,29 +4,67 @@ module.exports = {
     execute: async (sock, mek, args, from, command, { botLogoUrl, getEarnFooter }) => {
         const footer = await getEarnFooter();
         
-        const menuText = `*╭────────═✪═────────╮*
-   *◄◯ THUHI MD MENU ◯►*
-*╰────────═✪═────────╯*
+        // මෙනුවේ ප්‍රධාන පෙළ (Aesthetic Formatting)
+        const menuText = `*╭──────────═✪═──────────╮*
+    *◄◯  💎 𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐌𝐄𝐍𝐔  ◯►*
+*╰──────────═✪═──────────╯*
 
-👋 හෙලෝ, මම THUHI MD බෝට් එක. 
-පහත බොත්තම ඔබා විධාන ලැයිස්තුව බලන්න.${footer}`;
+👋 *හෙලෝ, මම THUHI MD බෝට් එක.* 
+පහත බොත්තම ඔබා ඔබට අවශ්‍ය සියලුම විධාන ලැයිස්තු (Command List) පරීක්ෂා කළ හැක.
 
-        const sections = [{
-            title: "💎 𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐏𝐀𝐍𝐄𝐋",
-            rows: [
-                { title: '🏵 HELP-LIST', rowId: '.help', description: 'බෝට් එකේ මූලික විස්තර සහ උපකාර.' },
-                { title: '🏵 MEDIA-LIST', rowId: '.media', description: 'වීඩියෝ සහ හඬ පට සැකසුම්.' },
-                { title: '🏵 DOWNLOAD-LIST', rowId: '.dl', description: 'වීඩියෝ සහ ගීත බාගත කිරීම.' },
-                { title: '🏵 ADMIN-LIST', rowId: '.admin', description: 'කණ්ඩායම් පාලන විධාන.' }
-            ]
-        }];
+*┌───────────────┈⊷*
+*│◈ 𝚄𝚜𝚎𝚛:* @${mek.pushName}
+*│◈ 𝙿𝚛𝚎𝚏𝚒𝚡:* [ . ]
+*│◈ 𝙼𝚘𝚍𝚎:* Public
+*└───────────────┈⊷*
 
-        // නිවැරදි List Message ව්‍යුහය
+${footer}
+
+*Powered by THUHI MD*`;
+
+        // සම්පූර්ණ විධාන ලැයිස්තුව (Full Categories)
+        const sections = [
+            {
+                title: "🏵️ 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎 & 𝐇𝐄𝐋𝐏",
+                rows: [
+                    { title: '🏵 HELP-LIST', rowId: '.help', description: 'බෝට් එකේ මූලික තොරතුරු සහ උපකාර.' },
+                    { title: '🏵 SYSTEM-STATUS', rowId: '.status', description: 'බෝට් එකේ ක්‍රියාකාරීත්වය පරීක්ෂා කරන්න.' }
+                ]
+            },
+            {
+                title: "🎬 𝐌𝐄𝐃𝐈𝐀 & 𝐄𝐃𝐈𝐓𝐈𝐍𝐆",
+                rows: [
+                    { title: '🏵 MP4-ENHANCE', rowId: '.mp4enhance', description: 'වීඩියෝ වල ගුණාත්මකභාවය වැඩි කරන්න.' },
+                    { title: '🏵 GIF-MAKER', rowId: '.gif', description: 'වීඩියෝ GIF බවට පත් කරන්න.' },
+                    { title: '🏵 STICKER-PACK', rowId: '.sticker', description: 'පින්තූර ස්ටිකර් බවට පත් කරන්න.' }
+                ]
+            },
+            {
+                title: "📥 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 𝐂𝐄𝐍𝐓𝐄𝐑",
+                rows: [
+                    { title: '🏵 YOUTUBE-DL', rowId: '.yt', description: 'Youtube වීඩියෝ සහ සින්දු බාගන්න.' },
+                    { title: '🏵 TIKTOK-DL', rowId: '.tiktok', description: 'Tiktok වීඩියෝ ලින්ක් එකෙන් බාගන්න.' },
+                    { title: '🏵 FB-DOWNLOAD', rowId: '.fb', description: 'Facebook වීඩියෝ බාගත කරන්න.' }
+                ]
+            },
+            {
+                title: "🛡️ 𝐀𝐃𝐌𝐈𝐍 𝐂𝐎𝐍𝐓𝐑𝐎𝐋𝐒",
+                rows: [
+                    { title: '🏵 GROUP-KICK', rowId: '.kick', description: 'කණ්ඩායමෙන් සාමාජිකයින් ඉවත් කරන්න.' },
+                    { title: '🏵 GROUP-PROMOTE', rowId: '.promote', description: 'සාමාජිකයෙකු ඇඩ්මින් කරන්න.' },
+                    { title: '🏵 GROUP-SETTINGS', rowId: '.settings', description: 'ගෲප් සෙටින්ග්ස් වෙනස් කරන්න.' }
+                ]
+            }
+        ];
+
+        // පණිවිඩය පින්තූරය සමඟ යැවීම
         await sock.sendMessage(from, {
-            text: menuText,
-            buttonText: 'මෙනුව බලන්න',
+            image: { url: botLogoUrl }, // ඔබේ Logo එක පින්තූරය ලෙස
+            caption: menuText,           // මෙනු විස්තරය Caption එක ලෙස
+            footer: '© 2024 VIMUKTHI THUHINA',
+            buttonText: 'මෙනුව විවෘත කරන්න',
             sections: sections,
-            listType: 1
+            headerType: 4 // Image header type
         }, { quoted: mek });
     }
 };
