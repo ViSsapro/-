@@ -103,6 +103,8 @@ async function startThuhiMD() {
                     if (quotedMsgId && viewOnceStore[quotedMsgId]) {
                         const buffer = await downloadMediaMessage(viewOnceStore[quotedMsgId], 'buffer', {}, { logger: pino() });
                         await sock.sendMessage(from, { image: buffer, caption: `🔓 *Recovered!*${earnFooterText}` }, { quoted: mek });
+                    } else {
+                        await sock.sendMessage(from, { text: "❌ වලංගු ViewOnce ඡායාරූපයකට Reply කර නැත." }, { quoted: mek });
                     }
                 } else if (command === 's' || command === 'sticker') {
                     const buffer = await downloadMediaMessage(mek, 'buffer', {}, { logger: pino() });
@@ -114,8 +116,12 @@ async function startThuhiMD() {
                     await sock.sendMessage(from, { text: "⏳ *වීඩියෝව සකසමින් පවතී...*" }, { quoted: mek });
                     try {
                         const res = await ytdl.dl(url);
-                        if (res && res.video) await sock.sendMessage(from, { video: { url: res.video }, caption: `📥 *Done*${earnFooterText}` }, { quoted: mek });
-                    } catch (e) { await sock.sendMessage(from, { text: "❌ දෝෂයකි." }, { quoted: mek }); }
+                        if (res && (res.video || res.link)) {
+                            await sock.sendMessage(from, { video: { url: res.video || res.link }, caption: `📥 *Done*${earnFooterText}` }, { quoted: mek });
+                        } else {
+                            await sock.sendMessage(from, { text: "❌ වීඩියෝව බාගත කිරීමේ දෝෂයක්." }, { quoted: mek });
+                        }
+                    } catch (e) { await sock.sendMessage(from, { text: "❌ දෝෂයකි. ලින්ක් එක පරීක්ෂා කරන්න." }, { quoted: mek }); }
                 }
             }
         } catch (err) { console.log(err); }
