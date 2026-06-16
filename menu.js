@@ -1,32 +1,51 @@
 module.exports = {
     execute: async (sock, mek, from, botLogoUrl, earnFooterText) => {
         
-        const menuText = `*╭────────═✪═────────╮*
-  *◄◯ 𝐓𝐇𝐔𝐇𝐈 𝐌𝐃 𝐌𝐄𝐍𝐔  ◯►*
-*╰────────═✪═────────╯*
+        async function menuCommand(sock, msg) {
+    const from = msg.key.remoteJid;
+    const pushname = msg.pushName || 'User';
+    const date = new Date().toLocaleDateString('en-GB');
+    const time = new Date().toLocaleTimeString('en-GB');
 
-👋 හෙලෝ, මම THUHI MD බෝට්. පහත විධාන භාවිතා කරන්න:
+    const menu = `
+╭─────♡◉♡─────⌬
+💖 *Hello ${pushname}...!* 🌸
+🌷 *Welcome to 𝐓𝐇𝐔𝐇𝐈 𝐎𝐅𝐂 𝐌𝐈𝐍𝐈 Menu* ✨
+╰─────♡◉♡─────⌬
 
-*📥 SOCIAL MEDIA DOWNLOAD*
-• \`.dl [link]\` - වීඩියෝ බාගත කිරීම.
+┆ ➤ 🌸
+┆ ➤ 💫
+┆ ➤ 🌷
 
-*🖼️ STICKER & PHOTO TOOLS*
-• \`.s\` හෝ \`.sticker\` - පින්තූරයකට Reply කර ස්ටිකර් සාදන්න.
-• \`.pic\` - ස්ටිකරයකට Reply කර පින්තූරයක් සාදන්න.
-• \`.vid\` - ස්ටිකරයකට Reply කර වීඩියෝවක් සාදන්න.
+📅 *Date:* ${date} 📆
+⌚ *Time:* ${time} ⏳
 
-*🔓 WHATSAPP TOOLS*
-• \`.ovp\` - One-View පින්තූරයක් ලබාගැනීම.
-• \`.ovv\` - One-View හඬ පටයක් (Voice) ලබාගැනීම.
-• \`.dp\` - Profile පින්තූර ලබාගැනීම.
+─────────────── 💗
 
-${earnFooterText}
+✨ *Commands List:* ✨
 
-_Powered by Vimukthi Thuhina_`;
+🛠️ *System*
+!menu - Show menu
+!ping - Check speed
 
-        await sock.sendMessage(from, { 
-            image: { url: botLogoUrl }, 
-            caption: menuText 
-        }, { quoted: mek });
-    }
+👥 *Group*
+!tagall - Tag all
+!promote - Make admin
+
+📥 *Download*
+!yt - YouTube DL
+!tiktok - TikTok DL
+
+─────────────── 🌸
+
+🌐 *THUHI-OFC Pairing Web* 💕
+> https://att.onrender.com
+
+> © 𝚃𝙷𝚄𝙷𝙸 𝙾𝙵𝙲 𝙱𝙾𝚃
+`;
+
+    await sock.sendMessage(from, { text: menu }, { quoted: msg });
+}
+
+module.exports = { menuCommand };
 };
