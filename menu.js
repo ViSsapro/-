@@ -1,13 +1,10 @@
 module.exports = {
     execute: async (sock, mek, from, botLogoUrl, earnFooterText) => {
-        
-        async function menuCommand(sock, msg) {
-    const from = msg.key.remoteJid;
-    const pushname = msg.pushName || 'User';
-    const date = new Date().toLocaleDateString('en-GB');
-    const time = new Date().toLocaleTimeString('en-GB');
+        const pushname = mek.pushName || 'User';
+        const date = new Date().toLocaleDateString('en-GB');
+        const time = new Date().toLocaleTimeString('en-GB');
 
-    const menu = `
+        const menu = `
 ╭─────♡◉♡─────⌬
 💖 *Hello ${pushname}...!* 🌸
 🌷 *Welcome to 𝐓𝐇𝐔𝐇𝐈 𝐎𝐅𝐂 𝐌𝐈𝐍𝐈 Menu* ✨
@@ -25,27 +22,31 @@ module.exports = {
 ✨ *Commands List:* ✨
 
 🛠️ *System*
-!menu - Show menu
-!ping - Check speed
+.alive - Bot status
+.menu - Show menu
 
 👥 *Group*
-!tagall - Tag all
-!promote - Make admin
+.tagall - Tag all
+.promote - Make admin
 
 📥 *Download*
-!yt - YouTube DL
-!tiktok - TikTok DL
+.dl - Download video
+.s - Make sticker
+
+🔓 *Tools*
+.ovp - Recover view once
 
 ─────────────── 🌸
 
-🌐 *THUHI-OFC Pairing Web* 💕
-> https://att.onrender.com
+${earnFooterText}
+
+┆ ✦ 🌷
+┆ ➤ 💖
+┆ ➤ 🌸
 
 > © 𝚃𝙷𝚄𝙷𝙸 𝙾𝙵𝙲 𝙱𝙾𝚃
 `;
 
-    await sock.sendMessage(from, { text: menu }, { quoted: msg });
-}
-
-module.exports = { menuCommand };
+        await sock.sendMessage(from, { image: { url: botLogoUrl }, caption: menu }, { quoted: mek });
+    }
 };
