@@ -170,7 +170,7 @@ async function startThuhiMD() {
                 }
 
                 if (command === 'owner') {
-                    const ownerNumber = '94701153310'; // << මේක උඹේ number එකට මාරු කරපන්
+                    const ownerNumber = '947XXXXXXXX'; // << මේක උඹේ number එකට මාරු කරපන්
                     await sock.sendMessage(from, {
                         contacts: {
                             displayName: 'THUHI MD Owner',
@@ -266,19 +266,50 @@ async function startThuhiMD() {
                     return;
                 }
 
-                // OVP
-                if (command === 'ovp') {
-                    const quoted = mek.message.extendedTextMessage?.contextInfo?.quotedMessage;
-                    if (!quoted) return await sock.sendMessage(from, { text: `❌ One-View එකට reply කර.ovp ගහන්න${earnFooterText}` }, { quoted: mek });
-                    let viewOnceMsg = quoted.viewOnceMessageV2Extension?.message || quoted.viewOnceMessageV2?.message || quoted.viewOnceMessage?.message;
-                    if (!viewOnceMsg) return await sock.sendMessage(from, { text: `❌ One-View නෙමෙයි${earnFooterText}` }, { quoted: mek });
-                    await sock.sendMessage(from, { text: "⏳ Save කරනවා..." }, { quoted: mek });
-                    const buffer = await downloadMediaMessage({ message: viewOnceMsg }, 'buffer', {}, { logger: pino() });
-                    const msgType = Object.keys(viewOnceMsg)[0];
-                    if (msgType === 'imageMessage') await sock.sendMessage(from, { image: buffer, caption: '🔓 Saved!' + earnFooterText }, { quoted: mek });
-                    else if (msgType === 'videoMessage') await sock.sendMessage(from, { video: buffer, caption: '🔓 Saved!' + earnFooterText }, { quoted: mek });
-                    return;
-                }
+// ===== OVP FIXED FOR VIEW ONCE V2 & V2EXTENSION =====
+if (command === 'ovp') {
+    const quoted = mek.message.extendedTextMessage?.contextInfo?.quotedMessage;
+    if (!quoted) return await sock.sendMessage(from, { text: `❌ View Once එකට reply කර.ovp ගහන්න${earnFooterText}` }, { quoted: mek });
+
+    // View Once V2, V2Extension, Old V1 ඔක්කොම handle
+    let viewOnceMsg = null;
+    if (quoted.viewOnceMessageV2Extension) {
+        viewOnceMsg = quoted.viewOnceMessageV2Extension.message;
+    } else if (quoted.viewOnceMessageV2) {
+        viewOnceMsg = quoted.viewOnceMessageV2.message;
+    } else if (quoted.viewOnceMessage) {
+        viewOnceMsg = quoted.viewOnceMessage.message;
+    }
+
+    if (!viewOnceMsg) return await sock.sendMessage(from, { text: `❌ View Once නෙමෙයි. Open කරලා බලලා තියෙනවා නම් වැඩ කරන්නේ නෑ${earnFooterText}` }, { quoted: mek });
+
+    await sock.sendMessage(from, { text: "⏳ View Once save කරනවා..." }, { quoted: mek });
+
+    try {
+        const buffer = await downloadMediaMessage({ message: viewOnceMsg }, 'buffer', {}, { logger: pino() });
+        const msgType = Object.keys(viewOnceMsg)[0];
+
+        if (msgType === 'imageMessage') {
+            await sock.sendMessage(from, {
+                image: buffer,
+                caption: '🔓 View Once Photo Saved!\n⚡ THUHI MD' + earnFooterText
+            }, { quoted: mek });
+        }
+        else if (msgType === 'videoMessage') {
+            await sock.sendMessage(from, {
+                video: buffer,
+                caption: '🔓 View Once Video Saved!\n⚡ THUHI MD' + earnFooterText
+            }, { quoted: mek });
+        }
+        else {
+            await sock.sendMessage(from, { text: `❌ මේ type එක support කරන්නේ නෑ` }, { quoted: mek });
+        }
+    } catch (e) {
+        console.log('OVP Error:', e);
+        await sock.sendMessage(from, { text: `❌ Save කරන්න බැරි වුණා. View Once එක open කරලා බලලා තියෙනවා නම් වැඩ කරන්නේ නෑ${earnFooterText}` }, { quoted: mek });
+    }
+    return;
+}
 
                 if (command === 'toimg') {
                     const isSticker = msgType === 'stickerMessage' || (msgType === 'extendedTextMessage' && mek.message.extendedTextMessage.contextInfo?.quotedMessage?.stickerMessage);
